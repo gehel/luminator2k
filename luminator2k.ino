@@ -54,7 +54,7 @@ void setup() {
     panel1.begin();
     panel1.setEffect(EFFECT_HORIZONTAL);
     panel2.begin();
-    panel2.setEffect(EFFECT_HORIZONTAL);
+    panel2.setEffect(EFFECT_SNAKE);
 }
 
 void loop() {
@@ -69,20 +69,20 @@ void loop() {
 
 void processButtons() {
     if (button_states[0] != button_states_prev[0]) {
-        if (button_states[0] == LOW) panel1.setEffect(EFFECT_BLINK_BLUE);
-        else panel1.setEffect(EFFECT_HORIZONTAL);
+        if (button_states[0] == LOW) panel1.temporaryEffect(EFFECT_BLINK_BLUE);
+        else panel1.resetTemporaryEffect();
     }
     if (button_states[1] != button_states_prev[1]) {
-        if (button_states[1] == LOW) panel1.setEffect(EFFECT_BLINK_GREEN);
-        else panel1.setEffect(EFFECT_HORIZONTAL);
+        if (button_states[1] == LOW) panel1.temporaryEffect(EFFECT_BLINK_GREEN);
+        else panel1.resetTemporaryEffect();
     }
     if (button_states[2] != button_states_prev[2]) {
-        if (button_states[2] == LOW) panel2.setEffect(EFFECT_BLINK_YELLOW);
-        else panel2.setEffect(EFFECT_HORIZONTAL);
+        if (button_states[2] == LOW) panel2.temporaryEffect(EFFECT_BLINK_YELLOW);
+        else panel2.resetTemporaryEffect();
     }
     if (button_states[3] != button_states_prev[3]) {
-        if (button_states[3] == LOW) panel2.setEffect(EFFECT_BLINK_RED);
-        else panel2.setEffect(EFFECT_HORIZONTAL);
+        if (button_states[3] == LOW) panel2.temporaryEffect(EFFECT_BLINK_RED);
+        else panel2.resetTemporaryEffect();
     }
 }
 

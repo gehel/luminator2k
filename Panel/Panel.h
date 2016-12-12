@@ -14,6 +14,7 @@
 #define EFFECT_BLINK_BLUE 4
 #define EFFECT_BLINK_YELLOW 5
 #define EFFECT_HORIZONTAL 6
+#define EFFECT_SNAKE 7
 
 class Panel {
 
@@ -38,6 +39,7 @@ private:
     void stepBlinkBlue(uint16_t step);
     void stepBlinkYellow(uint16_t step);
     void stepHorizontal(uint16_t step);
+    void stepSnake(uint16_t step);
     void colorWipe(uint32_t c);
     void rainbow(uint8_t wait);
     void rainbowCycle(uint8_t wait);

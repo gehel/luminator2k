@@ -11,6 +11,7 @@ Panel::Panel(Adafruit_NeoPixel& _neoPixel): neoPixel(_neoPixel) {
     lastStepTime = millis();
     stepDuration = 10;
     active = false;
+    neoPixel.setBrightness(64);
 }
 
 void Panel::begin() {
@@ -47,6 +48,9 @@ void Panel::pump() {
                 case EFFECT_HORIZONTAL:
                     stepHorizontal(currentStep);
                     break;
+                case EFFECT_SNAKE:
+                    stepSnake(currentStep);
+                    break;
             }
         } else {
             stepBlack(currentStep);
@@ -78,25 +82,21 @@ void Panel::setEffect(uint8_t effect) {
             maxSteps = 5;
             stepDuration = 200;
             break;
+        case EFFECT_SNAKE:
+            maxSteps = neoPixel.numPixels();
+            stepDuration = 100;
+            break;
     }
 }
 
 void Panel::temporaryEffect(uint8_t effect) {
-    Serial.println("temporaryEffect");
-    if (!isTemporaryEffectActive()) {
-        Serial.println("temporaryEffectReal");
-        tempSavedEffect = selectedEffect;
-        setEffect(effect);
-    }
+    if (tempSavedEffect == -1) tempSavedEffect = selectedEffect;
+    setEffect(effect);
 }
 
 void Panel::resetTemporaryEffect() {
-    Serial.println("resetTemporaryEffect");
-    if (isTemporaryEffectActive()) {
-        Serial.println("resetTemporaryReal");
-        setEffect(tempSavedEffect);
-        tempSavedEffect = -1;
-    }
+    if (tempSavedEffect != -1) setEffect(tempSavedEffect);
+    tempSavedEffect = -1;
 }
 
 boolean Panel::isTemporaryEffectActive() {
@@ -135,6 +135,13 @@ void Panel::stepBlinkYellow(uint16_t step) {
 void Panel::stepHorizontal(uint16_t step) {
     for(uint16_t i = 0; i<neoPixel.numPixels(); i++) {
         if ((i / 4) == step) neoPixel.setPixelColor(i, neoPixel.Color(255, 255, 255));
+        else neoPixel.setPixelColor(i, neoPixel.Color(0, 0, 0));
+    }
+}
+
+void Panel::stepSnake(uint16_t step) {
+    for(uint16_t i = 0; i<neoPixel.numPixels(); i++) {
+        if (i == step) neoPixel.setPixelColor(i, neoPixel.Color(255, 255, 255));
         else neoPixel.setPixelColor(i, neoPixel.Color(0, 0, 0));
     }
 }
