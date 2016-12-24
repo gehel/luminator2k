@@ -6,6 +6,7 @@
 
 Panel::Panel(Adafruit_NeoPixel& _neoPixel): neoPixel(_neoPixel) {
     selectedEffect = EFFECT_BLINK_WHITE;
+    tempSavedEffect = EFFECT_NONE;
     currentStep = 0;
     maxSteps = 1;
     lastStepTime = millis();
@@ -17,6 +18,16 @@ Panel::Panel(Adafruit_NeoPixel& _neoPixel): neoPixel(_neoPixel) {
 void Panel::begin() {
     neoPixel.begin();
     neoPixel.show();
+}
+
+void Panel::incEffect() {
+    if (selectedEffect == EFFECT_MAX) setEffect(0);
+    else setEffect(selectedEffect + 1);
+}
+
+void Panel::decEffect() {
+    if (selectedEffect == 0) setEffect(EFFECT_MAX);
+    else setEffect(selectedEffect - 1);
 }
 
 void Panel::pump() {
@@ -51,6 +62,18 @@ void Panel::pump() {
                 case EFFECT_SNAKE:
                     stepSnake(currentStep);
                     break;
+                case EFFECT_RAINBOW:
+                    stepRainbow(currentStep);
+                    break;
+                case EFFECT_RAINBOW_CYCLE:
+                    stepRainbowCycle(currentStep);
+                    break;
+                case EFFECT_THEATER_CHASE:
+                    stepTheaterChase(currentStep);
+                    break;
+                case EFFECT_THEATER_CHASE_RAINBOW:
+                    stepTheaterChaseRainbow(currentStep);
+                    break;
             }
         } else {
             stepBlack(currentStep);
@@ -62,6 +85,14 @@ void Panel::pump() {
 void Panel::off() { active = false; }
 
 void Panel::on() { active = true; }
+
+uint32_t Panel::color(uint8_t r, uint8_t g, uint8_t b) {
+    return neoPixel.Color(r, g, b);
+}
+
+void Panel::show() {
+    neoPixel.show();
+}
 
 void Panel::setEffect(uint8_t effect) {
     selectedEffect = effect;
@@ -86,21 +117,32 @@ void Panel::setEffect(uint8_t effect) {
             maxSteps = neoPixel.numPixels();
             stepDuration = 100;
             break;
+        case EFFECT_RAINBOW:
+        case EFFECT_RAINBOW_CYCLE:
+            maxSteps = 256;
+            stepDuration = 10;
+            break;
+        case EFFECT_THEATER_CHASE:
+            maxSteps = 3;
+            stepDuration = 100;
+            break;
+        case EFFECT_THEATER_CHASE_RAINBOW:
+            maxSteps = 3 * 256;
+            stepDuration = 80;
+            break;
     }
 }
 
 void Panel::temporaryEffect(uint8_t effect) {
-    if (tempSavedEffect == -1) tempSavedEffect = selectedEffect;
+    if (tempSavedEffect == EFFECT_NONE) {
+        tempSavedEffect = selectedEffect;
+    }
     setEffect(effect);
 }
 
 void Panel::resetTemporaryEffect() {
-    if (tempSavedEffect != -1) setEffect(tempSavedEffect);
-    tempSavedEffect = -1;
-}
-
-boolean Panel::isTemporaryEffectActive() {
-    return tempSavedEffect != -1;
+    if (tempSavedEffect != EFFECT_NONE) setEffect(tempSavedEffect);
+    tempSavedEffect = EFFECT_NONE;
 }
 
 void Panel::stepBlack(uint16_t step) {
@@ -152,64 +194,39 @@ void Panel::colorWipe(uint32_t c) {
     }
 }
 
-void Panel::rainbow(uint8_t wait) {
-    uint16_t i, j;
-
-    for(j=0; j<256; j++) {
-        for(i=0; i<neoPixel.numPixels(); i++) {
-            neoPixel.setPixelColor(i, Wheel((i+j) & 255));
-        }
-        neoPixel.show();
-        delay(wait);
+void Panel::stepRainbow(uint16_t step) {
+    for(uint16_t i=0; i<neoPixel.numPixels(); i++) {
+        neoPixel.setPixelColor(i, Wheel((i+step) & 255));
     }
 }
 
 // Slightly different, this makes the rainbow equally distributed throughout
-void Panel::rainbowCycle(uint8_t wait) {
-    uint16_t i, j;
-
-    for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
-        for(i=0; i< neoPixel.numPixels(); i++) {
-            neoPixel.setPixelColor(i, Wheel(((i * 256 / neoPixel.numPixels()) + j) & 255));
-        }
-        neoPixel.show();
-        delay(wait);
+void Panel::stepRainbowCycle(uint16_t step) {
+    for(uint16_t i=0; i< neoPixel.numPixels(); i++) {
+        neoPixel.setPixelColor(i, Wheel(((i * 256 / neoPixel.numPixels()) + step) & 255));
     }
 }
 
 //Theatre-style crawling lights.
-void Panel::theaterChase(uint32_t c, uint8_t wait) {
-    for (int j=0; j<10; j++) {  //do 10 cycles of chasing
-        for (int q=0; q < 3; q++) {
-            for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
-                neoPixel.setPixelColor(i+q, c);    //turn every third pixel on
-            }
-            neoPixel.show();
-
-            delay(wait);
-
-            for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
-                neoPixel.setPixelColor(i+q, 0);        //turn every third pixel off
-            }
+void Panel::stepTheaterChase(uint16_t step) {
+        for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
+            neoPixel.setPixelColor(i+step, neoPixel.Color(255, 255, 255));    //turn every third pixel on
         }
-    }
+        for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
+            neoPixel.setPixelColor(i+((step+1)%3), 0);        //turn every third pixel off
+        }
 }
 
 //Theatre-style crawling lights with rainbow effect
-void Panel::theaterChaseRainbow(uint8_t wait) {
-    for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
-        for (int q=0; q < 3; q++) {
-            for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
-                neoPixel.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
-            }
-            neoPixel.show();
-
-            delay(wait);
-
-            for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
-                neoPixel.setPixelColor(i+q, 0);        //turn every third pixel off
-            }
-        }
+void Panel::stepTheaterChaseRainbow(uint16_t step) {
+    int j = step % 256;
+    int q = step % 3;
+    int r = (step + 1) % 3;
+    for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
+        neoPixel.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
+    }
+    for (uint16_t i=0; i < neoPixel.numPixels(); i=i+3) {
+        neoPixel.setPixelColor(i+r, 0);        //turn every third pixel off
     }
 }
 
